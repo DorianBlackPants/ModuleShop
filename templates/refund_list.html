@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        {% if refunds %}
+        {% for refund in refunds %}
+
+                <div class="col-md-8 mb-5">
+
+                <h2> Order ID: {{ refund.purchase.id }}</h2>
+                    <h3>User: {{ refund.purchase.user }}</h3>
+                    <h3>{{ refund.purchase.item }}</h3>
+                    <h4> $ {{ refund.purchase.get_total_item_price }}</h4>
+                <h4> Request time: {{ refund.request_time }} </h4>
+                    <div class="container">
+
+                 <form method="POST" action="{% url 'manage' refund.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" id="action" value="approve">
+                            <button type="submit" class="btn btn-success">Approve</button>
+                 </form>
+                    </div>
+                    <div class="container">
+
+                     <form method="POST" action="{% url 'manage' refund.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" id="reject" value="reject">
+                            <button type="submit" class="btn btn-danger" value='reject'>Reject</button>
+                        </form>
+                <hr>
+                    </div>
+            </div>
+                {% endfor %}
+
+
+    </div>
+        {% else %}
+            <div class="col-md-8 mb-5">
+            <p> There are no orders. </p>
+            </div>
+    {% endif %}
+
+    {% if is_paginated %}
+        <nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center">
+    {% if page_obj.has_previous %}
+      <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo;</a></li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+    {% endif %}
+    {% for i in paginator.page_range %}
+      {% if page_obj.number == i %}
+        <li class="page-item active"><span class="page-link">{{ i }} <span class="page-link sr-only">(current)</span></span></li>
+      {% else %}
+        <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+      {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+      <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">&raquo;</a></li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+    {% endif %}
+  </ul>
+        </nav>
+{% endif %}
+
+</div>
+
+
+{% endblock %}

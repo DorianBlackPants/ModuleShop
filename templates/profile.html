@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="container">
+    <div class="col-md-4 mb-5">
+            <H2> Logged in as: {{ user.username }} </H2>
+            <H4> Your account balance: $ {{ user.funds }} </H4>
+    </div>
+    </div>
+    <div class="container">
+    <div class="row">
+        {% if orders %}
+        {% for order in orders %}
+
+                <div class="col-md-8 mb-5">
+
+                <h2>{{ order.item }}</h2>
+                <hr>
+                <p> Amount: {{ order.amount }} </p>
+                <p> Date: {{ order.created_at }} </p>
+                <p> Paid: ${{ order.get_total_item_price }}</p>
+                </div>
+            <div class="container">
+                <form method="post" action="{% url 'refund' %}">
+                {% csrf_token %}
+
+                     <input type="hidden" name="order.id" value="{{ order.id }}">
+                     <input type="hidden" name="refund_requested" value="True">
+
+                <button class="btn btn-danger" type="submit">Cancel</button>
+                </form>
+            </div>
+                {% endfor %}
+
+                </div>
+    </div>
+        {% else %}
+            <div class="col-md-8 mb-5">
+            <p> You have no orders yet </p>
+            <a class="btn btn-primary" href="{%  url 'products' %}">Browse</a>
+            </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+

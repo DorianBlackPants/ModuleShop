@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="row">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert col-12
+                            {% if message.tags %}
+                               {% if message.tags == 'error' %}
+                                    alert-danger
+                               {% else %}
+                                    alert-{{ message.tags }}
+                               {% endif %}
+                            {% endif %}">
+                        <strong>{{ message }}</strong>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    {% if item %}
+    <div class="row h-100 align-items-center justify-content-center text-center pb-5">
+        <div class="container">
+            <h1 class="my-4">{{ item.title }} <small>${{ item.price }}</small></h1>
+            <a href="{{ item.image.url }}">
+            <img class="img-fluid rounded mb-3 mb-md-0" src="{{ item.image.url }} " width="400" height="400" alt="My image">
+          </a>
+            <br>
+            <h3>Items left: {{ item.quantity }}</h3>
+          <p> {{ item.description }} </p>
+           {% if request.user.is_authenticated %}
+        <form class="OrderForm" method="POST">
+            {{ form }}
+            {% csrf_token %}
+        <button class="btn btn-primary" type="submit">Buy Now</button>
+        </form>
+            {% else %}
+            <a class="btn btn-primary" href="{% url 'login' %}">Login to purchase</a>
+            {% endif %}
+        {% if request.user.is_superuser %}
+            <a class="btn btn-primary" href="{{ item.get_absolute_url }}/{{ 'update' }}">Edit</a>
+            {% endif %}
+        </div>
+    {% else %}
+    <p>There are no products.</p>
+    {% endif %}
+    </div>
+{% endblock %}
