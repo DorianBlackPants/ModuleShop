@@ -14,12 +14,20 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.conf import settings
+from django.conf.urls import url
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from rest_framework import routers
 
+from myshop.API.resources import PurchaseViewSet
+from myshop.API.serializers import OrderSerializer
 from myshop.views import Main, Login, Register, Success, ItemListView, Logout, \
-    CombinedView, ProfileView, SuperUserView, ItemCreateView, ItemUpdateView, CreateRefund, RefundView, RefundManage
+    ProfileView, SuperUserView, ItemCreateView, ItemUpdateView, CreateRefund, RefundView, RefundManage, ItemDetailView, \
+    CreateOrder
+
+router = routers.DefaultRouter()
+router.register(r'orders', PurchaseViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -29,7 +37,8 @@ urlpatterns = [
     path('success/', Success.as_view(), name='success'),
     path('logout/', Logout.as_view(), name='logout'),
     path('products/', ItemListView.as_view(), name='products'),
-    path('products/<int:pk>', CombinedView.as_view(), name='item_detail'),
+    path('products/<int:pk>', ItemDetailView.as_view(), name='item_detail'),
+    path('buy/', CreateOrder.as_view(), name='buy'),
     path('profile/', ProfileView.as_view(), name='profile'),
     path('super/', SuperUserView.as_view(), name='super'),
     path('create_item/', ItemCreateView.as_view(), name='create_item'),
@@ -37,7 +46,7 @@ urlpatterns = [
     path('refund/', CreateRefund.as_view(), name='refund'),
     path('refunds/', RefundView.as_view(), name='manage_refunds'),
     path('manage/<int:pk>/', RefundManage.as_view(), name='manage'),
-
+    url(r'^', include(router.urls)),
 
 ]
 if settings.DEBUG:

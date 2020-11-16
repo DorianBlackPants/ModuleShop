@@ -6,7 +6,7 @@ from django.urls import reverse
 
 
 class UserProfile(AbstractUser):
-    funds = models.FloatField(blank=True, null=True)
+    funds = models.FloatField(blank=True, null=True, default=1000.00)
 
     def __str__(self):
         return self.username

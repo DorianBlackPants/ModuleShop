@@ -28,9 +28,10 @@
             <h3>Items left: {{ item.quantity }}</h3>
           <p> {{ item.description }} </p>
            {% if request.user.is_authenticated %}
-        <form class="OrderForm" method="POST">
+        <form class="OrderForm" method="POST" action="{% url 'buy' %}">
             {{ form }}
             {% csrf_token %}
+             <input type="hidden" name="item_id" value="{{ item.id }}">
         <button class="btn btn-primary" type="submit">Buy Now</button>
         </form>
             {% else %}

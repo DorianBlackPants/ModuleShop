@@ -16,22 +16,24 @@ from myshop.models import UserProfile, Item, Order, Refund
 
 
 class Register(CreateView):
-    def get(self, request, *args, **kwargs):
-        context = {'form': RegisterForm()}
-        return render(request, 'register.html', context)
+    form_class = RegisterForm
+    template_name = 'register.html'
+    next_page = '/'
+    redirect_field_name = 'next'
 
-    def post(self, request, *args, **kwargs):
-        form = RegisterForm(request.POST)
-        if form.is_valid():
-            userprofile = form.save(commit=False)
-            userprofile.funds = 1000.00
-            userprofile.save()
-            credentials = form.cleaned_data
-            userprofile = authenticate(username=credentials['username'],
-                                       password=credentials['password1'])
-            login(self.request, userprofile)
-            return HttpResponseRedirect(reverse_lazy('profile'))
-        return render(request, 'register.html', {'form': form})
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = RegisterForm()
+        return context
+
+    def form_valid(self, form):
+        userprofile = form.save(commit=False)
+        userprofile.save()
+        credentials = form.cleaned_data
+        userprofile = authenticate(username=credentials['username'],
+                                   password=credentials['password1'])
+        login(self.request, userprofile)
+        return HttpResponseRedirect(reverse_lazy('profile'))
 
 
 class Login(LoginView):
@@ -79,62 +81,43 @@ class ItemDetailView(DetailView):
     model = Item
     template_name = 'product_detail.html'
 
-    def get_object(self):
-        obj = super().get_object()
-        obj.save()
-        return obj
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['form'] = OrderForm()
         return context
 
 
-class CreateOrder(CreateView, SingleObjectMixin):
+class CreateOrder(LoginRequiredMixin, CreateView):
     template_name = 'product_detail.html'
     model = Order
     form_class = OrderForm
 
-    def post(self, request, *args, **kwargs):
-        form = OrderForm(request.POST)
-        if form.is_valid():
-            order = form.save(commit=False)
-            data = form.cleaned_data
-            order.user_id = self.request.user.id
-            order.item_id = kwargs['pk']
-            order.amount = int(data['amount'])
-            user_obj = UserProfile.objects.get(id=self.request.user.id)
-            item_obj = Item.objects.get(id=kwargs['pk'])
+    def form_valid(self, form):
+        order = form.save(commit=False)
+        data = form.cleaned_data
+        order.user_id = self.request.user.id
+        order.item_id = self.request.POST.get('item_id')
+        order.amount = int(data['amount'])
+        user_obj = UserProfile.objects.get(id=self.request.user.id)
+        item_obj = Item.objects.get(id=self.request.POST.get('item_id'))
 
-            if item_obj.quantity >= order.amount:
-                if user_obj.funds >= user_obj.funds - order.get_total_item_price():
-                    user_obj.funds = round(user_obj.funds - order.get_total_item_price(), 2)
-                    item_obj.quantity = item_obj.quantity - data['amount']
-                    order.save()
-                    user_obj.save()
-                    item_obj.save()
-                    return HttpResponseRedirect(reverse_lazy('profile'))
-                else:
-                    messages.error(self.request, 'Not enough funds.')
-                    return HttpResponseRedirect(reverse_lazy('profile'))
-            else:
-                messages.error(self.request, 'Out of stock :(')
+        if item_obj.quantity >= order.amount:
+            if user_obj.funds >= user_obj.funds - order.get_total_item_price():
+                user_obj.funds = round(user_obj.funds - order.get_total_item_price(), 2)
+                item_obj.quantity = item_obj.quantity - data['amount']
+                order.save()
+                user_obj.save()
+                item_obj.save()
                 return HttpResponseRedirect(reverse_lazy('profile'))
-        return render(request, 'product_detail.html', {'form': form})
+            else:
+                messages.error(self.request, 'Not enough funds.')
+                return HttpResponseRedirect(self.request.path_info)
+        else:
+            messages.error(self.request, 'Out of stock')
+            return HttpResponseRedirect(self.request.path_info)
 
     def get_success_url(self):
         return reverse('item_detail', kwargs={'pk': self.object.pk})
-
-
-class CombinedView(View):
-
-    def get(self, request, *args, **kwargs):
-        view = ItemDetailView.as_view()
-        return view(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        view = CreateOrder.as_view()
-        return view(request, *args, **kwargs)
 
 
 class ProfileView(LoginRequiredMixin, ListView):
